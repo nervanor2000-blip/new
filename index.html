@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Seen - Görev Takip Uygulaması</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header>
+        <h1>Seen</h1>
+        <p>Günlük görevlerini sade bir şekilde yönet.</p>
+      </header>
+
+      <section class="input-card">
+        <form id="task-form">
+          <label for="task-input">Yeni görev</label>
+          <div class="row">
+            <input id="task-input" type="text" placeholder="Örn: Sprint planını hazırla" required />
+            <button type="submit">Ekle</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="stats" aria-live="polite">
+        <span id="total">Toplam: 0</span>
+        <span id="done">Tamamlanan: 0</span>
+      </section>
+
+      <section>
+        <ul id="task-list" class="task-list"></ul>
+      </section>
+    </main>
+
+    <template id="task-template">
+      <li class="task-item">
+        <label>
+          <input type="checkbox" class="toggle" />
+          <span class="title"></span>
+        </label>
+        <button class="delete" type="button">Sil</button>
+      </li>
+    </template>
+
+    <script src="app.js"></script>
+  </body>
+</html>
