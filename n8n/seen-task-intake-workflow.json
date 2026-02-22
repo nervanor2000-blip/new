@@ -1,0 +1,226 @@
+{
+  "name": "Seen - Görev Alma ve Önceliklendirme",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "seen-task-intake",
+        "httpMethod": "POST",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "1",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        260,
+        300
+      ],
+      "webhookId": "seen-task-intake"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $json.body ?? $json;\nconst title = (body.title || '').trim();\nconst priority = (body.priority || 'normal').toLowerCase();\n\nif (!title) {\n  throw new Error('title alanı zorunludur.');\n}\n\nconst normalizedPriority = ['low', 'normal', 'high', 'critical'].includes(priority)\n  ? priority\n  : 'normal';\n\nreturn [{\n  title,\n  description: (body.description || '').trim(),\n  priority: normalizedPriority,\n  createdAt: new Date().toISOString(),\n  source: body.source || 'webhook'\n}];"
+      },
+      "id": "2",
+      "name": "Normalize Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "if-1",
+              "leftValue": "={{$json.priority}}",
+              "rightValue": "high",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "if-2",
+              "leftValue": "={{$json.priority}}",
+              "rightValue": "critical",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "3",
+      "name": "Yüksek Öncelik mi?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        740,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "set-1",
+              "name": "message",
+              "value": "=🔥 Acil görev alındı: {{$json.title}}",
+              "type": "string"
+            },
+            {
+              "id": "set-2",
+              "name": "nextStep",
+              "value": "Takım kanalına hemen bildirim gönder",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "4",
+      "name": "Acil Yanıt",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        980,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "set-3",
+              "name": "message",
+              "value": "=✅ Görev kaydedildi: {{$json.title}}",
+              "type": "string"
+            },
+            {
+              "id": "set-4",
+              "name": "nextStep",
+              "value": "Planlı backlog listesine ekle",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "5",
+      "name": "Normal Yanıt",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        980,
+        380
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\n  status: 'ok',\n  task: {\n    title: $json.title,\n    priority: $json.priority,\n    description: $json.description,\n    source: $json.source,\n    createdAt: $json.createdAt\n  },\n  message: $json.message,\n  nextStep: $json.nextStep\n} }}",
+        "options": {}
+      },
+      "id": "6",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1220,
+        300
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Payload": {
+      "main": [
+        [
+          {
+            "node": "Yüksek Öncelik mi?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Yüksek Öncelik mi?": {
+      "main": [
+        [
+          {
+            "node": "Acil Yanıt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Normal Yanıt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Acil Yanıt": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normal Yanıt": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "id": "seen-task-intake",
+  "tags": []
+}
